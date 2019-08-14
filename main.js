@@ -8,7 +8,7 @@ var sanitizeHtml = require('sanitize-html');
 var mysql      = require('mysql');
 var db=mysql.createConnection({
   host     : 'localhost',
-  user     : 'nodejs',
+  user     : 'root',
   password : '1004',
   database : 'opentutorials'
 });
@@ -31,11 +31,18 @@ var app = http.createServer(function(request,response){
           response.end(html);
         });*/
         db.query(`SELECT * FROM topic`,function (error,topic){
+          var title = 'Welcome';
+          var description = 'Hello, Node.js';
+          var list = template.list(topic);
+          var html = template.HTML(title, list,
+            `<h2>${title}</h2>${description}`,
+            `<a href="/create">create</a>`
+          );
           response.writeHead(200);
-          response.end('success');
+          response.end(html);
         });
       } else {
-        fs.readdir('./data', function(error, filelist){
+        /*fs.readdir('./data', function(error, filelist){
           var filteredId = path.parse(queryData.id).base;
           fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
             var title = queryData.id;
@@ -56,9 +63,35 @@ var app = http.createServer(function(request,response){
             response.writeHead(200);
             response.end(html);
           });
+        });*/
+        db.query(`SELECT * FROM topic`,function (error,topics){
+          if (error)
+        { throw error;}
+        db.query(`SELECT * FROM topic WHERE id=?`,[queryData.id],function (error2,topic){
+          if (error){
+             throw error;
+          }
+            
+          var title = topic[0].title;
+          var description = topic[0].description;
+          var list = template.list(topics);
+          var html = template.HTML(title, list,
+            `<h2>${title}</h2>${description}`,
+            `<a href="/create">create</a>`,
+              `<a href="/update?id=${queryData.id}">update</a>
+              <form action="delete_process" method="post">
+                <input type="hidden" name="id" value="${queryData.id}">
+                <input type="submit" value="delete">
+              </form>`
+          );
+          response.writeHead(200);
+          response.end(html);
+        })
         });
+
       }
-    } else if(pathname === '/create'){
+    
+   } else if(pathname === '/create'){
       fs.readdir('./data', function(error, filelist){
         var title = 'WEB - create';
         var list = template.list(filelist);
